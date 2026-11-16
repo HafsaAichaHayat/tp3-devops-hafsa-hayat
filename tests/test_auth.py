@@ -87,3 +87,22 @@ def test_successful_login_clears_previous_failed_attempts():
     result = auth.authenticate("alice", "Alice123!Secure")
     assert result["success"] is True
     assert "alice" not in auth.attempts
+    
+def test_stored_value_does_not_contain_plaintext_password():
+    """La valeur stockée ne doit pas contenir le mot de passe en clair."""
+    password = "UniqueSecret123!"
+    assert auth.register_user("frank", password) is True
+    stored = auth.users["frank"]
+    assert password not in stored
+    assert stored != password
+    assert stored.startswith("pbkdf2_sha256$")
+
+
+def test_same_password_produces_different_stored_hashes():
+    """Deux comptes avec le même mot de passe ont des hachages différents (sel aléatoire)."""
+    password = "SamePassword123!"
+    assert auth.register_user("dave", password) is True
+    assert auth.register_user("erin", password) is True
+    assert auth.users["dave"] != auth.users["erin"]
+    assert auth.users["dave"].startswith("pbkdf2_sha256$")
+    assert auth.users["erin"].startswith("pbkdf2_sha256$")
